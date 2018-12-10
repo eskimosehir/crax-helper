@@ -22,8 +22,9 @@ case "$1" in
 		ZIPNAME=${FILENAME%.*} # Get the prefix of the file
 		mv "$ZIPNAME"".zip" "$ZIPNAME".apk # Rename file to zip suffix
 
-		# Sign apk with the key.
-		jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore "$2" "$ZIPNAME".apk alias_name
+		# Sign apk with the key. with jarsigner or apksigner.
+		#jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore "$2" "$ZIPNAME".apk alias_name
+		apksigner sign --ks "$2" "$ZIPNAME".apk
 		
 		# Align the apk.
 		zipalign -v 4 "$ZIPNAME".apk "$ZIPNAME"-aligned.apk
@@ -41,3 +42,5 @@ case "$1" in
 esac
 
 exit 0
+
+/Users/RIZA/Library/Android/sdk/build-tools/28.0.3/apksigner
