@@ -8,7 +8,7 @@ Crax helper, simple as that!
 Keygen flag helps generating a new keystore to sign the apk with.
 
 ```bash
-$ crax-helper.sh --keygen mykeystore.keystore
+$ crax-helper.sh --keygen mykeystore
 ```
 
 ## Signing
