@@ -21,3 +21,10 @@ Just give the zip file as is after alteration. It handles renaming, signing and 
 $ crax-helper.sh --sign mykeystore.keystore cracked.zip
 ```
 
+## Easy install
+
+Install flag removes and installs the modified oddmar
+
+```bash
+$ crax-helper.sh --install cracked.apk
+```
