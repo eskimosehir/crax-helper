@@ -22,71 +22,92 @@ BAD=${RED}-${NORMAL}
 WHAT=${YELLOW}\?${NORMAL}
 INFO=${YELLOW}\*${NORMAL}
 
+useJarSigner(){
+    if [[ -n $(which jarsigner) ]]; then
+        echo "[$FINE] jarsigner found, signing..."
+        jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore "$KEYSTORE" "$FILENAME".apk alias_name
+    else
+        printCantFindToolError jarsigner
+    fi
+}
+
+useApkSigner(){
+    if [[ -n $(which jarsigner) ]]; then
+        echo "[$FINE] apksigner found, signing..."
+        apksigner sign --ks "$KEYSTORE" "$FILENAME".apk
+    else
+        printCantFindToolError apksigner
+    fi
+}
+
+useZipAlign(){
+    if [[ -n $(which zipalign) ]]; then
+        echo "[$FINE] zipalign found, aligning the apk..."
+        zipalign -v 4 "$FILENAME".apk "$FILENAME"-aligned.apk
+    else
+        printCantFindToolError zipalign
+    fi
+}
+
+useKeyTool(){
+    if [[ -n $(which keytool) ]]; then
+        echo "[$FINE] keytool found, generating new keystore."
+        [[ -z "$FILENAME" ]] && echo "[$INFO] Warning! keystore name is empty.";
+        # Generate key with following parameters
+        keytool -genkey -v -keystore "$FILENAME".keystore -alias alias_name -keyalg RSA -keysize 2048 -validity 10000
+    else
+        printCantFindToolError keytool
+    fi
+}
+
+printCantFindToolError(){
+    echo "[$BAD] Could not find $1."
+    echo "[$WHAT] Make sure $1 is installed and the install path is added to the PATH."
+    exit 1
+}
+
+askUserForWhichSignTool(){
+    echo "[$INFO] For jarsigner enter js or jarsigner"
+    echo "[$INFO] For apksigner enter as or apksigner"
+    printf "[$WHAT] Enter which signing tool you want to use: "
+    read -r SIGNINGTOOL
+}
+
+
 
 case "$1" in
     --keygen)
-        if [[ -n $(which keytool) ]]; then
-            echo "[$FINE] keytool found, generating new keystore."
-            [[ -z "$2" ]] && echo "[$INFO] Warning! keystore name is empty.";
-            # Generate key with following parameters
-            keytool -genkey -v -keystore "$2".keystore -alias alias_name -keyalg RSA -keysize 2048 -validity 10000
-        else
-            echo "[$BAD] Could not find keytool."
-            echo "[$WHAT] Make sure keytool is installed and the install path is added to the PATH."
-        fi
+        FILENAME="$2"
+        useKeyTool
         ;;
     --sign)
-        FILENAME="$3"
-        ZIPNAME=${FILENAME%.*} # Get the prefix of the file
-        if [ ! -f "$ZIPNAME.zip" ]; then
-            echo "[$BAD] $ZIPNAME.zip not found!\n"
+        KEYSTORE="$2"
+        ZIPFILE="$3"
+        FILENAME=${ZIPFILE%.*} # Get the prefix of the file
+        if [ ! -f "$ZIPFILE" ]; then
+            echo "[$BAD] $ZIPFILE not found!"
             exit 1
         else
-            mv "$ZIPNAME"".zip" "$ZIPNAME".apk # Rename file suffix from zip to apk
+            cp "$FILENAME".zip "$FILENAME".apk # Rename file suffix from zip to apk
         fi
         
-        echo "[$WHAT] Which signing tool do you want to use: jarsigner or apksigner."
-        echo "[$INFO] For jarsigner enter js or jarsigner"
-        echo "[$INFO] For apksigner enter as or apksigner"
-        read -r SIGNINGTOOL
-
+        askUserForWhichSignTool
         case "$SIGNINGTOOL" in
             --jarsigner | -jarsigner | jarsigner | -js | js)
-                if [[ -n $(which jarsigner) ]]; then
-                    echo "[$FINE] jarsigner found, signing..."
-                    jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore "$2" "$ZIPNAME".apk alias_name
-                else
-                    echo "[$BAD] Could not find jarsigner."
-                    echo "[$WHAT] Make sure jarsigner is installed and the install path is added to the PATH."
-                    exit 1
-                fi
+                useJarSigner
+                useZipAlign
                 ;;
 
             --apksigner | -apksigner | apksigner | -as | as)
-                if [[ -n $(which jarsigner) ]]; then
-                    echo "[$FINE] apksigner found, signing..."
-                    apksigner sign --ks "$2" "$ZIPNAME".apk
-                else
-                    echo "[$BAD] Could not find apksigner."
-                    echo "[$WHAT] Make sure apksigner is installed and the install path is added to the PATH."
-                    exit 1
-                fi
+                useZipAlign
+                useApkSigner
                 ;;
             *)
                 echo "[$BAD] Please give correct input."
-                echo "[$INFO] To utilize jarsigner enter: jarsigner or the short form js"
-                echo "[$INFO] To uilize apksigner enter: apksigner or the short form as"
+                echo "[$INFO] To utilize jarsigner enter: jarsigner or the short form: js"
+                echo "[$INFO] To uilize apksigner enter: apksigner or the short form: as"
                 exit 1
         esac
-                
-        if [[ -n $(which zipalign) ]]; then
-            echo "[$FINE] zipalign found, aligning the apk..."
-            zipalign -v 4 "$ZIPNAME".apk "$ZIPNAME"-aligned.apk
-        else
-            echo "[$BAD] Could not find zipalign."
-            echo "[$WHAT] Make sure zipalign is installed and the install path is added to the PATH."
-            exit 1
-        fi
         ;;
     --install)
         if [[ -n $(which adb) ]]; then
@@ -95,9 +116,7 @@ case "$1" in
             adb uninstall com.mobge.Oddmar
             adb install "$2"
         else
-            echo "[$BAD] Could not find adb."
-            echo "[$WHAT] Make sure adb is installed and the install path is added to the PATH."
-            exit 1
+            printCantFindToolError adb
         fi
         ;;
     *)
