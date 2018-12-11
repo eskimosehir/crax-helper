@@ -59,6 +59,7 @@ case "$1" in
                     echo "[$WHAT] Make sure jarsigner is installed and the install path is added to the PATH."
                     exit 1
                 fi
+                ;;
 
             --apksigner | -apksigner | apksigner | -as | as)
                 if [[ -n $(which jarsigner) ]]; then
@@ -69,11 +70,13 @@ case "$1" in
                     echo "[$WHAT] Make sure apksigner is installed and the install path is added to the PATH."
                     exit 1
                 fi
+                ;;
             *)
                 echo "[$BAD] Please give correct input."
                 echo "[$INFO] To utilize jarsigner enter: jarsigner or the short form js"
                 echo "[$INFO] To uilize apksigner enter: apksigner or the short form as"
                 exit 1
+        esac
                 
         if [[ -n $(which zipalign) ]]; then
             echo "[$FINE] zipalign found, aligning the apk..."
@@ -97,11 +100,10 @@ case "$1" in
         fi
         ;;
     *)
-        echo "[$INFO] Usage: $0 --keygen [KEYNAME]"
-        printf "\t$0 --sign [KEYNAME] [ZIPFILE]\n"
-        printf "\t$0 --install [APKFILE]\n"
+        printf "[$INFO] Usage:\t$0 --keygen [KEYNAME]\n"
+        printf "\t\t$0 --sign [KEYNAME] [ZIPFILE]\n"
+        printf "\t\t$0 --install [APKFILE]\n"
         exit 1
 esac
 
 exit 0
-
