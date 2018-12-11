@@ -27,6 +27,7 @@ case "$1" in
     --keygen)
         if [[ -n $(which keytool) ]]; then
             echo "[$FINE] keytool found, generating new keystore."
+            [[ -z "$2" ]] && echo "[$INFO] Warning! keystore name is empty.";
             # Generate key with following parameters
             keytool -genkey -v -keystore "$2".keystore -alias alias_name -keyalg RSA -keysize 2048 -validity 10000
         else
